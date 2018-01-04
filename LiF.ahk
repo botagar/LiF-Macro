@@ -4,7 +4,7 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 DetectHiddenWindows,On
 
-MainLoopPeriod := 10 ;10ms
+MainLoopPeriod := 20 ;20ms
 state := {}
 defaults := {}
 
@@ -21,6 +21,7 @@ Esc::ExitApp
 
 F12::ToggleLoopStatus(state)
 F11::setGameWindowId(state)
+F9::SendTabChar(state)
 
 Up::MoveCursor(state, "Up")
 Down::MoveCursor(state, "Down")
@@ -41,7 +42,7 @@ return
 loadDefaults(ByRef defaults) {
 	melee := {}
 	melee.hold := 50
-	melee.rest := 150
+	melee.rest := 250
 	melee.ammoCount := 0
 	defaults.melee := melee
 	
@@ -67,10 +68,10 @@ initState(ByRef state, defaults) {
 }
 
 getGameWindow(ByRef state) {
-	WinGet, id, ID, Life is Feudal MMO:
-	IfExist (id) 
+	WinGet, id, ID, Life is Feudal: MMO
+	If (id != "") 
 	{
-		state.GameWindowId := %id%
+		state.GameWindowId := id
 		return True
 	}
 	state.GameWindowId := 0
@@ -78,7 +79,13 @@ getGameWindow(ByRef state) {
 
 setGameWindowId(ByRef state) {
 	id := WinExist("A")
-	state.GameWindowId := %id%
+	state.GameWindowId := id
+}
+
+SendTabChar(ByRef state) {
+	SoundBeep, 1000, 200
+	windowId := state.GameWindowId
+	ControlSend ,, {Tab}, ahk_id %windowId%
 }
 
 loadGui(ByRef state) {
@@ -92,6 +99,7 @@ loadGui(ByRef state) {
 	dAmmoCount := state.ammoCount
 	
 	Gui, Name: New,, LiF AutoClicker
+	Gui,+AlwaysOnTop
 	
 	Gui, Add, GroupBox, Section  w160 h40, Game Info
 	Gui, Add, text, xs+10 ys+20, Window ID:
@@ -116,19 +124,19 @@ loadGui(ByRef state) {
 	Gui, Add, text, xs+10 ys+140, Ammo Count
 	Gui, Add, Edit, xs+80 ys+137 w60 h10 r1 vAmmoCount, %dAmmoCount%
 	
-	Gui, Add, GroupBox, Section x180 y6 w160 h80, Hotkeys
+	Gui, Add, GroupBox, Section x180 y6 w160 h100, Hotkeys
 	Gui, Add, text, xs+10 ys+20, F12: Toggle Run
 	Gui, Add, text, xs+10 ys+40, F11: Manually Get Window
-	Gui, Add, text, xs+10 ys+60, Esc: Exit Macro
+	Gui, Add, text, xs+10 ys+60, F9: Send TAB character
+	Gui, Add, text, xs+10 ys+80, Esc: Exit Macro
 	
-	Gui, Add, GroupBox, Section x180 ym+90 w160 h60, Status
-	Gui, Add, text, xs+10 ys+15, Stopped
+	Gui, Add, GroupBox, Section x180 ym+110 w160 h60, Status
+	Gui, Add, text, vStatusLabel xs+10 ys+15, Stopped
 	Gui, Add, Progress, w70 h20 xs+10 ys+35 cBlue BackgroundGreen vHoldProgress Range0-%dHold%
 	Gui, Add, Progress, w70 h20 xs+80 ys+35 cRed BackgroundGreen vRestProgress Range0-%dRest%
 	
 	Gui, +Resize
 	Gui, Show, w640 h480
-	Gui, Submit, NoHide
 	
 	state.hold := dHold
 	state.rest := dRest
@@ -199,6 +207,8 @@ ToggleLoopStatus(ByRef state) {
 
 MacroLoop(ByRef state) {
 	global MainLoopPeriod
+	global Hold
+	global Rest
 	state.currentAction := "Stopped"
 	
 	windowId := state.GameWindowId
@@ -213,14 +223,15 @@ MacroLoop(ByRef state) {
 		currentAction := state.currentAction
 		hold := state.hold
 		rest := state.rest
+		GuiControl,,StatusLabel,%currentAction%
 	
-		;ToolTip % prevState " -> " currentAction ": " timer "/" hold
+		ToolTip % Hold " - " Rest
 	
 		if (prevState == "Stopped" AND currentAction == "Running") {
 			timer := 0
 			GuiControl,, HoldProgress, 0
 			GuiControl,, RestProgress, 0
-			ControlClick,, ahk_id %windowId%,, Left, 1, D
+			ControlClick,, ahk_id %windowId%,, LEFT, 1, D
 			timer += %MainLoopPeriod%
 			GuiControl,, HoldProgress, %timer%
 		} else if (currentAction == "Running" AND timer < hold) {
@@ -257,8 +268,9 @@ MoveCursor(ByRef state, direction) {
 }
 
 MinimizeGameWindow(ByRef state) {
+	SoundBeep, 1000, 200
 	windowId := state.GameWindowId
-	WinMinimize, ahk_id windowId
+	WinMinimize, ahk_id %windowId%
 }
 
 
