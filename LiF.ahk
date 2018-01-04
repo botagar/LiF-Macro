@@ -4,7 +4,7 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 DetectHiddenWindows,On
 
-MainLoopPeriod := 20 ;20ms
+MainLoopPeriod := 10 ;10ms
 state := {}
 defaults := {}
 
@@ -20,6 +20,7 @@ return
 Esc::ExitApp
 
 F12::ToggleLoopStatus(state)
+F11::setGameWindowId(state)
 
 Up::MoveCursor(state, "Up")
 Down::MoveCursor(state, "Down")
@@ -81,7 +82,7 @@ setGameWindowId(ByRef state) {
 }
 
 loadGui(ByRef state) {
-	global
+	global ;All variables declared in this function are global
 	
 	state.currentAction := "LoadingGui"
 	
@@ -115,8 +116,15 @@ loadGui(ByRef state) {
 	Gui, Add, text, xs+10 ys+140, Ammo Count
 	Gui, Add, Edit, xs+80 ys+137 w60 h10 r1 vAmmoCount, %dAmmoCount%
 	
-	Gui, Add, GroupBox, Section x180 y6 w160 h60, Hotkeys
+	Gui, Add, GroupBox, Section x180 y6 w160 h80, Hotkeys
 	Gui, Add, text, xs+10 ys+20, F12: Toggle Run
+	Gui, Add, text, xs+10 ys+40, F11: Manually Get Window
+	Gui, Add, text, xs+10 ys+60, Esc: Exit Macro
+	
+	Gui, Add, GroupBox, Section x180 ym+90 w160 h60, Status
+	Gui, Add, text, xs+10 ys+15, Stopped
+	Gui, Add, Progress, w70 h20 xs+10 ys+35 cBlue BackgroundGreen vHoldProgress Range0-%dHold%
+	Gui, Add, Progress, w70 h20 xs+80 ys+35 cRed BackgroundGreen vRestProgress Range0-%dRest%
 	
 	Gui, +Resize
 	Gui, Show, w640 h480
@@ -132,6 +140,7 @@ loadGui(ByRef state) {
 
 SetMeleePreset() {
 	global defaults
+	global state
 	newHold := defaults.melee.hold
 	newRest := defaults.melee.rest
 	newAmmoCount := defaults.melee.ammoCount
@@ -141,10 +150,13 @@ SetMeleePreset() {
 	state.hold := newHold
 	state.rest := newRest
 	state.ammoCount := newAmmoCount
+	GuiControl,, HoldProgress, Range0-%newHold%
+	GuiControl,, RestProgress, Range0-%newRest%
 }
 
 SetSlingerPreset() {
 	global defaults
+	global state
 	newHold := defaults.slinger.hold
 	newRest := defaults.slinger.rest
 	newAmmoCount := defaults.slinger.ammoCount
@@ -154,10 +166,13 @@ SetSlingerPreset() {
 	state.hold := newHold
 	state.rest := newRest
 	state.ammoCount := newAmmoCount
+	GuiControl,, HoldProgress, Range0-%newHold%
+	GuiControl,, RestProgress, Range0-%newRest%
 }
 
 SetBowPreset() {
 	global defaults
+	global state
 	newHold := defaults.bow.hold
 	newRest := defaults.bow.rest
 	newAmmoCount := defaults.bow.ammoCount
@@ -167,6 +182,8 @@ SetBowPreset() {
 	state.hold := newHold
 	state.rest := newRest
 	state.ammoCount := newAmmoCount
+	GuiControl,, HoldProgress, Range0-%newHold%
+	GuiControl,, RestProgress, Range0-%newRest%
 }
 
 ToggleLoopStatus(ByRef state) {
@@ -185,24 +202,32 @@ MacroLoop(ByRef state) {
 	state.currentAction := "Stopped"
 	
 	windowId := state.GameWindowId
-	hold := state.hold
-	rest := state.rest
 	ammoCount := state.ammoCount
 	prevState := "Stopped"
 	timer := 0
+	GuiControl,, HoldProgress, 0
+	GuiControl,, RestProgress, 0
+	
 	continueMacro := True
 	While (continueMacro == True) {
 		currentAction := state.currentAction
+		hold := state.hold
+		rest := state.rest
 	
 		;ToolTip % prevState " -> " currentAction ": " timer "/" hold
 	
 		if (prevState == "Stopped" AND currentAction == "Running") {
 			timer := 0
+			GuiControl,, HoldProgress, 0
+			GuiControl,, RestProgress, 0
 			ControlClick,, ahk_id %windowId%,, Left, 1, D
 			timer += %MainLoopPeriod%
+			GuiControl,, HoldProgress, %timer%
 		} else if (currentAction == "Running" AND timer < hold) {
 			timer += %MainLoopPeriod%
+			GuiControl,, HoldProgress, %timer%
 		} else if (currentAction == "Running" AND timer >= hold) {
+			GuiControl,, HoldProgress, %timer%
 			timer := 0
 			ControlClick,, ahk_id %windowId%,, Left, 1, U
 			state.currentAction := "Resting"
@@ -211,10 +236,12 @@ MacroLoop(ByRef state) {
 		
 		if (currentAction == "Resting" AND timer < rest) {
 			timer += %MainLoopPeriod%
+			GuiControl,, RestProgress, %timer%
 		} else if (currentAction == "Resting" AND timer >= rest) {
+			GuiControl,, RestProgress, %timer%
 			timer := 0
 			state.currentAction := "Running"
-			currentAction := state.currentAction
+			currentAction := "Stopped"
 		}
 		
 		prevState := currentAction
