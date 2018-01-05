@@ -32,6 +32,16 @@ SetTimerValues:
 	Gui, Submit, NoHide
 	SaveUserInputToState(state)
 	return
+	
+ToggleWindowOnTop:
+	Gui, Submit, NoHide
+	;ToolTip % AlwaysOnTop
+	if AlwaysOnTop {
+		Gui, +AlwaysOnTop
+	} else {
+		Gui, -AlwaysOnTop
+	}
+	return
 
 GuiClose:
 GuiEscape:
@@ -101,7 +111,6 @@ loadGui(ByRef state) {
 	dAmmoCount := state.ammoCount
 	
 	Gui, Name: New,, LiF AutoClicker
-	Gui,+AlwaysOnTop
 	
 	Gui, Add, GroupBox, Section  w160 h40, Game Info
 	Gui, Add, text, xs+10 ys+20, Window ID:
@@ -140,7 +149,9 @@ loadGui(ByRef state) {
 	Gui, Add, Progress, w140 h20 xs+10 ys+45 h5 cGreen BackgroundWhite vAmmoProgress Range0-%dAmmoCount% 
 	GuiControl,, AmmoProgress, %dAmmoCount% 
 	
-	Gui, +Resize
+	Gui, Add, Checkbox, Section xs+10 ys+80 vAlwaysOnTop gToggleWindowOnTop Checked, Window Always On Top
+	
+	Gui, +Resize +AlwaysOnTop
 	Gui, Show, w640 h480
 	
 	state.hold := dHold
