@@ -14,7 +14,6 @@ getGameWindow(state)
 loadGui(state)
 
 MacroLoop(state)
-
 return
 
 Esc::ExitApp
@@ -29,13 +28,16 @@ Left::MoveCursor(state, "Left")
 Right::MoveCursor(state, "Right")
 M::MinimizeGameWindow(state)
 
+SetTimerValues:
+	Gui, Submit, NoHide
+	SaveUserInputToState(state)
+	return
+
 GuiClose:
 GuiEscape:
-{
 	MsgBox Goodbye
 	ExitApp
-}
-return
+	return
 
 ;-----------------------------------------------------------------------------------;
 
@@ -112,17 +114,18 @@ loadGui(ByRef state) {
 	}
 	Gui, Font
 	
-	Gui, Add, GroupBox, Section xm  w160 h60, Presets
+	Gui, Add, GroupBox, Section xm  w160 h80, Presets
 	Gui, Add, Radio, xs+10 ys+20 Group vMelee gSetMeleePreset, Melee
 	Gui, Add, Radio, xs+10 ys+40 vSlinger gSetSlingerPreset Checked, Slinger
 	Gui, Add, Radio, xs+85 ys+40 vBow gSetBowPreset, Bow
+	Gui, Add, Button, xs+10 ys+60 h15 w50 gSetTimerValues Default, Set
 	
-	Gui, Add, text, xs+10 ys+80, Hold (ms)
-	Gui, Add, Edit, xs+80 ys+77 w60 h10 r1 vHold, %dHold%
-	Gui, Add, text, xs+10 ys+110, Rest (ms)
-	Gui, Add, Edit, xs+80 ys+107 w60 h10 r1 vRest, %dRest%
-	Gui, Add, text, xs+10 ys+140, Ammo Count
-	Gui, Add, Edit, xs+80 ys+137 w60 h10 r1 vAmmoCount, %dAmmoCount%
+	Gui, Add, text, xs+10 ys+100, Hold (ms)
+	Gui, Add, Edit, xs+80 ys+97 w60 h10 r1 vHold, %dHold%
+	Gui, Add, text, xs+10 ys+130, Rest (ms)
+	Gui, Add, Edit, xs+80 ys+127 w60 h10 r1 vRest, %dRest%
+	Gui, Add, text, xs+10 ys+160, Ammo Count
+	Gui, Add, Edit, xs+80 ys+157 w60 h10 r1 vAmmoCount, %dAmmoCount%
 	
 	Gui, Add, GroupBox, Section x180 y6 w160 h100, Hotkeys
 	Gui, Add, text, xs+10 ys+20, F12: Toggle Run
@@ -132,8 +135,10 @@ loadGui(ByRef state) {
 	
 	Gui, Add, GroupBox, Section x180 ym+110 w160 h60, Status
 	Gui, Add, text, vStatusLabel xs+10 ys+15, Stopped
-	Gui, Add, Progress, w70 h20 xs+10 ys+35 cBlue BackgroundGreen vHoldProgress Range0-%dHold%
-	Gui, Add, Progress, w70 h20 xs+80 ys+35 cRed BackgroundGreen vRestProgress Range0-%dRest%
+	Gui, Add, Progress, w70 h20 xs+10 ys+35 h5 cBlue BackgroundWhite vHoldProgress Range0-%dHold%
+	Gui, Add, Progress, w70 h20 xs+80 ys+35 h5 cRed BackgroundWhite vRestProgress Range0-%dRest%
+	Gui, Add, Progress, w140 h20 xs+10 ys+45 h5 cGreen BackgroundWhite vAmmoProgress Range0-%dAmmoCount% 
+	GuiControl,, AmmoProgress, %dAmmoCount% 
 	
 	Gui, +Resize
 	Gui, Show, w640 h480
@@ -194,11 +199,23 @@ SetBowPreset() {
 	GuiControl,, RestProgress, Range0-%newRest%
 }
 
+SaveUserInputToState(ByRef state) {
+	global Hold
+	global Rest
+	global AmmoCount
+	state.hold := Hold
+	state.rest := Rest
+	state.ammoCount := AmmoCount
+	GuiControl,, HoldProgress, Range0-%Hold%
+	GuiControl,, RestProgress, Range0-%Rest%
+}
+
 ToggleLoopStatus(ByRef state) {
 	windowId := state.GameWindowId
 	currentStatus := state.currentAction
 	if (currentStatus == "Running" OR currentStatus == "Resting") {
 		ControlClick,, ahk_id %windowId%,, Right, 1,
+		GuiControl,,StatusLabel,Stopped
 		state.currentAction := "Stopped"
 	} else {
 		state.currentAction := "Running"
@@ -207,8 +224,6 @@ ToggleLoopStatus(ByRef state) {
 
 MacroLoop(ByRef state) {
 	global MainLoopPeriod
-	global Hold
-	global Rest
 	state.currentAction := "Stopped"
 	
 	windowId := state.GameWindowId
@@ -223,9 +238,6 @@ MacroLoop(ByRef state) {
 		currentAction := state.currentAction
 		hold := state.hold
 		rest := state.rest
-		GuiControl,,StatusLabel,%currentAction%
-	
-		ToolTip % Hold " - " Rest
 	
 		if (prevState == "Stopped" AND currentAction == "Running") {
 			timer := 0
@@ -233,6 +245,7 @@ MacroLoop(ByRef state) {
 			GuiControl,, RestProgress, 0
 			ControlClick,, ahk_id %windowId%,, LEFT, 1, D
 			timer += %MainLoopPeriod%
+			GuiControl,,StatusLabel,%currentAction%
 			GuiControl,, HoldProgress, %timer%
 		} else if (currentAction == "Running" AND timer < hold) {
 			timer += %MainLoopPeriod%
@@ -242,6 +255,7 @@ MacroLoop(ByRef state) {
 			timer := 0
 			ControlClick,, ahk_id %windowId%,, Left, 1, U
 			state.currentAction := "Resting"
+			GuiControl,,StatusLabel,Resting
 			currentAction := state.currentAction
 		}
 		
