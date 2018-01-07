@@ -123,18 +123,28 @@ loadGui(ByRef state) {
 	}
 	Gui, Font
 	
-	Gui, Add, GroupBox, Section xm  w160 h80, Presets
+	Gui, Add, GroupBox, Section xm  w160 h125, Presets
 	Gui, Add, Radio, xs+10 ys+20 Group vMelee gSetMeleePreset, Melee
 	Gui, Add, Radio, xs+10 ys+40 vSlinger gSetSlingerPreset Checked, Slinger
 	Gui, Add, Radio, xs+85 ys+40 vBow gSetBowPreset, Bow
-	Gui, Add, Button, xs+10 ys+60 h15 w50 gSetTimerValues Default, Set
+	Gui, Add, Button, xs+10 ys+105 h15 w50 gSetTimerValues Default, Set
 	
-	Gui, Add, text, xs+10 ys+100, Hold (ms)
-	Gui, Add, Edit, xs+80 ys+97 w60 h10 r1 vHold, %dHold%
-	Gui, Add, text, xs+10 ys+130, Rest (ms)
-	Gui, Add, Edit, xs+80 ys+127 w60 h10 r1 vRest, %dRest%
-	Gui, Add, text, xs+10 ys+160, Ammo Count
-	Gui, Add, Edit, xs+80 ys+157 w60 h10 r1 vAmmoCount, %dAmmoCount%
+	Gui, Add, GroupBox, Section xm  w330 h125, Hotbar and Settings
+	Gui, Add, text, xs+10 ys+20, Hold (ms)
+	Gui, Add, Edit, xs+70 ys+17 w60 h10 r1 vHold, %dHold%
+	Gui, Add, text, xs+10 ys+40, Rest (ms)
+	Gui, Add, Edit, xs+70 ys+37 w60 h10 r1 vRest, %dRest%
+	Gui, Add, Checkbox, xs+180 ys+20 vAlwaysOnTop gToggleWindowOnTop Checked, Window Always On Top
+	;Gui, Add, text, xs+10 ys+160, Ammo Count
+	;Gui, Add, Edit, xs+80 ys+157 w60 h10 r1 vAmmoCount, %dAmmoCount%
+	Gui, Add, Checkbox, xs+10 ys+70 vSlot1 Checked, 1
+	Gui, Add, Checkbox, xs+30 ys+70 vSlot2 Checked, 2
+	Gui, Add, Checkbox, xs+50 ys+70 vSlot3 Checked, 3
+	Gui, Add, Checkbox, xs+70 ys+70 vSlot4 Checked, 4
+	Gui, Add, Checkbox, xs+90 ys+70 vSlot5 Checked, 5
+	Gui, Add, Checkbox, xs+110 ys+70 vSlot6 Checked, 6
+	Gui, Add, Checkbox, xs+130 ys+70 vSlot7 Checked, 7
+	Gui, Add, Checkbox, xs+150 ys+70 vSlot8 Checked, 8
 	
 	Gui, Add, GroupBox, Section x180 y6 w160 h100, Hotkeys
 	Gui, Add, text, xs+10 ys+20, F12: Toggle Run
@@ -149,10 +159,8 @@ loadGui(ByRef state) {
 	Gui, Add, Progress, w140 h20 xs+10 ys+45 h5 cGreen BackgroundWhite vAmmoProgress Range0-%dAmmoCount% 
 	GuiControl,, AmmoProgress, %dAmmoCount% 
 	
-	Gui, Add, Checkbox, Section xs+10 ys+80 vAlwaysOnTop gToggleWindowOnTop Checked, Window Always On Top
-	
 	Gui, +Resize +AlwaysOnTop
-	Gui, Show, w640 h480
+	Gui, Show, w360 h480
 	
 	state.hold := dHold
 	state.rest := dRest
