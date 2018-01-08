@@ -138,13 +138,16 @@ loadGui(ByRef state) {
 	;Gui, Add, text, xs+10 ys+160, Ammo Count
 	;Gui, Add, Edit, xs+80 ys+157 w60 h10 r1 vAmmoCount, %dAmmoCount%
 	Gui, Add, Checkbox, xs+10 ys+70 vSlot1 Checked, 1
-	Gui, Add, Checkbox, xs+30 ys+70 vSlot2 Checked, 2
-	Gui, Add, Checkbox, xs+50 ys+70 vSlot3 Checked, 3
-	Gui, Add, Checkbox, xs+70 ys+70 vSlot4 Checked, 4
-	Gui, Add, Checkbox, xs+90 ys+70 vSlot5 Checked, 5
-	Gui, Add, Checkbox, xs+110 ys+70 vSlot6 Checked, 6
-	Gui, Add, Checkbox, xs+130 ys+70 vSlot7 Checked, 7
-	Gui, Add, Checkbox, xs+150 ys+70 vSlot8 Checked, 8
+	Gui, Add, Checkbox, xs+40 ys+70 vSlot2 Checked, 2
+	Gui, Add, Edit, xs+40 ys+90 w20 h10 r1 vAmmoCountPos1, 0
+	Gui, Add, Checkbox, xs+70 ys+70 vSlot3 Checked, 3
+	Gui, Add, Checkbox, xs+100 ys+70 vSlot4 Checked, 4
+	Gui, Add, Checkbox, xs+130 ys+70 vSlot5 Checked, 5
+	Gui, Add, Checkbox, xs+160 ys+70 vSlot6 Checked, 6
+	Gui, Add, Checkbox, xs+190 ys+70 vSlot7 Checked, 7
+	Gui, Add, Checkbox, xs+220 ys+70 vSlot8 Checked, 8
+	Gui, Add, Checkbox, xs+250 ys+70 vSlot9 Checked, 9
+	Gui, Add, Checkbox, xs+280 ys+70 vSlot0 Checked, 0
 	
 	Gui, Add, GroupBox, Section x180 y6 w160 h100, Hotkeys
 	Gui, Add, text, xs+10 ys+20, F12: Toggle Run
