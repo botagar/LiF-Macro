@@ -35,15 +35,18 @@ SetTimerValues:
 	
 ToggleWindowOnTop:
 	Gui, Submit, NoHide
-	;ToolTip % AlwaysOnTop
 	if AlwaysOnTop {
 		Gui, +AlwaysOnTop
 	} else {
 		Gui, -AlwaysOnTop
 	}
 	return
+	
+HotbarToggle:
+	ToggleHotbarPositionEnabled(state)
+	return
 
-GuiClose:
+GuiNewClose:
 GuiEscape:
 	MsgBox Goodbye
 	ExitApp
@@ -55,7 +58,7 @@ loadDefaults(ByRef defaults) {
 	melee := {}
 	melee.hold := 50
 	melee.rest := 250
-	melee.ammoCount := 0
+	melee.ammoCount := 500
 	defaults.melee := melee
 	
 	slinger := {}
@@ -77,6 +80,28 @@ initState(ByRef state, defaults) {
 	state.rest := defaults.slinger.rest
 	state.ammoCount := defaults.slinger.ammoCount
 	state.currentAction := "Startup"
+	
+	state.hotbar := {}
+	state.hotbar.dirty := False
+	state.hotbar.slot := []
+	state.hotbar.slot[2] := {}
+	state.hotbar.slot[2].enabled := False
+	state.hotbar.slot[3] := {}
+	state.hotbar.slot[3].enabled := False
+	state.hotbar.slot[4] := {}
+	state.hotbar.slot[4].enabled := False
+	state.hotbar.slot[5] := {}
+	state.hotbar.slot[5].enabled := False
+	state.hotbar.slot[6] := {}
+	state.hotbar.slot[6].enabled := False
+	state.hotbar.slot[7] := {}
+	state.hotbar.slot[7].enabled := False
+	state.hotbar.slot[8] := {}
+	state.hotbar.slot[8].enabled := False
+	state.hotbar.slot[9] := {}
+	state.hotbar.slot[9].enabled := False
+	state.hotbar.slot[0] := {}
+	state.hotbar.slot[0].enabled := False
 }
 
 getGameWindow(ByRef state) {
@@ -110,7 +135,7 @@ loadGui(ByRef state) {
 	dRest := state.rest
 	dAmmoCount := state.ammoCount
 	
-	Gui, Name: New,, LiF AutoClicker
+	Gui, New,, LiF AutoClicker
 	
 	Gui, Add, GroupBox, Section  w160 h40, Game Info
 	Gui, Add, text, xs+10 ys+20, Window ID:
@@ -135,19 +160,27 @@ loadGui(ByRef state) {
 	Gui, Add, text, xs+10 ys+40, Rest (ms)
 	Gui, Add, Edit, xs+70 ys+37 w60 h10 r1 vRest, %dRest%
 	Gui, Add, Checkbox, xs+180 ys+20 vAlwaysOnTop gToggleWindowOnTop Checked, Window Always On Top
-	;Gui, Add, text, xs+10 ys+160, Ammo Count
-	;Gui, Add, Edit, xs+80 ys+157 w60 h10 r1 vAmmoCount, %dAmmoCount%
 	Gui, Add, Checkbox, xs+10 ys+70 vSlot1 Checked, 1
-	Gui, Add, Checkbox, xs+40 ys+70 vSlot2 Checked, 2
-	Gui, Add, Edit, xs+40 ys+90 w20 h10 r1 vAmmoCountPos1, 0
-	Gui, Add, Checkbox, xs+70 ys+70 vSlot3 Checked, 3
-	Gui, Add, Checkbox, xs+100 ys+70 vSlot4 Checked, 4
-	Gui, Add, Checkbox, xs+130 ys+70 vSlot5 Checked, 5
-	Gui, Add, Checkbox, xs+160 ys+70 vSlot6 Checked, 6
-	Gui, Add, Checkbox, xs+190 ys+70 vSlot7 Checked, 7
-	Gui, Add, Checkbox, xs+220 ys+70 vSlot8 Checked, 8
-	Gui, Add, Checkbox, xs+250 ys+70 vSlot9 Checked, 9
-	Gui, Add, Checkbox, xs+280 ys+70 vSlot0 Checked, 0
+	Gui, Add, Checkbox, xs+40 ys+70 vSlot2 gHotbarToggle Checked, 2
+	Gui, Add, Edit, xs+40 ys+90 w20 h10 r1 vAmmoCountPos2, %dAmmoCount%
+	Gui, Add, Checkbox, xs+70 ys+70 vSlot3 gHotbarToggle, 3
+	Gui, Add, Edit, xs+70 ys+90 w20 h10 r1 vAmmoCountPos3, %dAmmoCount%
+	Gui, Add, Checkbox, xs+100 ys+70 vSlot4 gHotbarToggle, 4
+	Gui, Add, Edit, xs+100 ys+90 w20 h10 r1 vAmmoCountPos4, %dAmmoCount%
+	Gui, Add, Checkbox, xs+130 ys+70 vSlot5 gHotbarToggle, 5
+	Gui, Add, Edit, xs+130 ys+90 w20 h10 r1 vAmmoCountPos5, %dAmmoCount%
+	Gui, Add, Checkbox, xs+160 ys+70 vSlot6 gHotbarToggle, 6
+	Gui, Add, Edit, xs+160 ys+90 w20 h10 r1 vAmmoCountPos6, %dAmmoCount%
+	Gui, Add, Checkbox, xs+190 ys+70 vSlot7 gHotbarToggle, 7
+	Gui, Add, Edit, xs+190 ys+90 w20 h10 r1 vAmmoCountPos7, %dAmmoCount%
+	Gui, Add, Checkbox, xs+220 ys+70 vSlot8 gHotbarToggle, 8
+	Gui, Add, Edit, xs+220 ys+90 w20 h10 r1 vAmmoCountPos8, %dAmmoCount%
+	Gui, Add, Checkbox, xs+250 ys+70 vSlot9 gHotbarToggle, 9
+	Gui, Add, Edit, xs+250 ys+90 w20 h10 r1 vAmmoCountPos9, %dAmmoCount%
+	Gui, Add, Checkbox, xs+280 ys+70 vSlot0 gHotbarToggle, 0
+	Gui, Add, Edit, xs+280 ys+90 w20 h10 r1 vAmmoCountPos0, %dAmmoCount%
+	
+	ToggleHotbarPositionEnabled(state)
 	
 	Gui, Add, GroupBox, Section x180 y6 w160 h100, Hotkeys
 	Gui, Add, text, xs+10 ys+20, F12: Toggle Run
@@ -181,7 +214,7 @@ SetMeleePreset() {
 	newAmmoCount := defaults.melee.ammoCount
 	GuiControl, Text, Hold, %newHold%
 	GuiControl, Text, Rest, %newRest%
-	GuiControl, Text, AmmoCount, %newAmmoCount%
+	SetAllHotbarValues(newAmmoCount)
 	state.hold := newHold
 	state.rest := newRest
 	state.ammoCount := newAmmoCount
@@ -197,7 +230,7 @@ SetSlingerPreset() {
 	newAmmoCount := defaults.slinger.ammoCount
 	GuiControl, Text, Hold, %newHold%
 	GuiControl, Text, Rest, %newRest%
-	GuiControl, Text, AmmoCount, %newAmmoCount%
+	SetAllHotbarValues(newAmmoCount)
 	state.hold := newHold
 	state.rest := newRest
 	state.ammoCount := newAmmoCount
@@ -213,12 +246,24 @@ SetBowPreset() {
 	newAmmoCount := defaults.bow.ammoCount
 	GuiControl, Text, Hold, %newHold%
 	GuiControl, Text, Rest, %newRest%
-	GuiControl, Text, AmmoCount, %newAmmoCount%
+	SetAllHotbarValues(newAmmoCount)
 	state.hold := newHold
 	state.rest := newRest
 	state.ammoCount := newAmmoCount
 	GuiControl,, HoldProgress, Range0-%newHold%
 	GuiControl,, RestProgress, Range0-%newRest%
+}
+
+SetAllHotbarValues(val) {
+	GuiControl, Text, AmmoCountPos2, %val%
+	GuiControl, Text, AmmoCountPos3, %val%
+	GuiControl, Text, AmmoCountPos4, %val%
+	GuiControl, Text, AmmoCountPos5, %val%
+	GuiControl, Text, AmmoCountPos6, %val%
+	GuiControl, Text, AmmoCountPos7, %val%
+	GuiControl, Text, AmmoCountPos8, %val%
+	GuiControl, Text, AmmoCountPos9, %val%
+	GuiControl, Text, AmmoCountPos0, %val%
 }
 
 SaveUserInputToState(ByRef state) {
@@ -250,6 +295,7 @@ MacroLoop(ByRef state) {
 	
 	windowId := state.GameWindowId
 	ammoCount := state.ammoCount
+	activeHotbars := []
 	prevState := "Stopped"
 	timer := 0
 	GuiControl,, HoldProgress, 0
@@ -257,6 +303,22 @@ MacroLoop(ByRef state) {
 	
 	continueMacro := True
 	While (continueMacro == True) {
+		hotbarDirty := state.hotbar.dirty
+		if (hotbarDirty == True) {
+			activeHotbars := []
+			hotbarStates := state.hotbar.slot
+			For k, v in hotbarStates {
+				if (v.enabled == True) {
+					activeHotbars.push(k)
+				}
+			}
+			state.hotbar.dirty := False
+		}
+		
+		For k, v in activeHotbars {
+			currentMaxAmmoCount := 0
+		}
+		
 		currentAction := state.currentAction
 		hold := state.hold
 		rest := state.rest
@@ -308,5 +370,87 @@ MinimizeGameWindow(ByRef state) {
 	windowId := state.GameWindowId
 	WinMinimize, ahk_id %windowId%
 }
+
+ToggleHotbarPositionEnabled(ByRef state) {
+	global Slot2, Slot3, Slot4, Slot5, Slot6, Slot7, Slot8, Slot9, Slot0
+	Gui, Submit, NoHide
+	
+	state.hotbar.dirty := True
+	
+	if (Slot2 == 1) {
+		GuiControl, Enable, AmmoCountPos2
+		state.hotbar.slot[2].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos2
+		state.hotbar.slot[2].enabled := False
+	}
+	
+	if (Slot3 == 1) {
+		GuiControl, Enable, AmmoCountPos3
+		state.hotbar.slot[3].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos3
+		state.hotbar.slot[3].enabled := False
+	}
+	
+	if (Slot4 == 1) {
+		GuiControl, Enable, AmmoCountPos4
+		state.hotbar.slot[4].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos4
+		state.hotbar.slot[4].enabled := False
+	}
+	
+	if (Slot5 == 1) {
+		GuiControl, Enable, AmmoCountPos5
+		state.hotbar.slot[5].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos5
+		state.hotbar.slot[5].enabled := False
+	}
+	
+	if (Slot6 == 1) {
+		GuiControl, Enable, AmmoCountPos6
+		state.hotbar.slot[6].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos6
+		state.hotbar.slot[6].enabled := False
+	}
+	
+	if (Slot7 == 1) {
+		GuiControl, Enable, AmmoCountPos7
+		state.hotbar.slot[7].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos7
+		state.hotbar.slot[7].enabled := False
+	}
+	
+	if (Slot8 == 1) {
+		GuiControl, Enable, AmmoCountPos8
+		state.hotbar.slot[8].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos8
+		state.hotbar.slot[8].enabled := False
+	}
+	
+	if (Slot9 == 1) {
+		GuiControl, Enable, AmmoCountPos9
+		state.hotbar.slot[9].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos9
+		state.hotbar.slot[9].enabled := False
+	}
+	
+	if (Slot0 == 1) {
+		GuiControl, Enable, AmmoCountPos0
+		state.hotbar.slot[0].enabled := True
+	} else {
+		GuiControl, Disable, AmmoCountPos0
+		state.hotbar.slot[0].enabled := False
+	}
+}
+
+
+
 
 
