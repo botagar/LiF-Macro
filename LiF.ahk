@@ -80,10 +80,13 @@ initState(ByRef state, defaults) {
 	state.rest := defaults.slinger.rest
 	state.ammoCount := defaults.slinger.ammoCount
 	state.currentAction := "Startup"
+	state.equipTime := 4500
 	
 	state.hotbar := {}
 	state.hotbar.dirty := False
 	state.hotbar.slot := []
+	state.hotbar.slot[1] := {}
+	state.hotbar.slot[1].enabled := False
 	state.hotbar.slot[2] := {}
 	state.hotbar.slot[2].enabled := False
 	state.hotbar.slot[3] := {}
@@ -160,8 +163,9 @@ loadGui(ByRef state) {
 	Gui, Add, text, xs+10 ys+40, Rest (ms)
 	Gui, Add, Edit, xs+70 ys+37 w60 h10 r1 vRest, %dRest%
 	Gui, Add, Checkbox, xs+180 ys+20 vAlwaysOnTop gToggleWindowOnTop Checked, Window Always On Top
-	Gui, Add, Checkbox, xs+10 ys+70 vSlot1 Checked, 1
-	Gui, Add, Checkbox, xs+40 ys+70 vSlot2 gHotbarToggle Checked, 2
+	Gui, Add, Checkbox, xs+10 ys+70 vSlot1 gHotbarToggle Checked, 1
+	Gui, Add, Edit, xs+10 ys+90 w20 h10 r1 vAmmoCountPos1, %dAmmoCount%
+	Gui, Add, Checkbox, xs+40 ys+70 vSlot2 gHotbarToggle, 2
 	Gui, Add, Edit, xs+40 ys+90 w20 h10 r1 vAmmoCountPos2, %dAmmoCount%
 	Gui, Add, Checkbox, xs+70 ys+70 vSlot3 gHotbarToggle, 3
 	Gui, Add, Edit, xs+70 ys+90 w20 h10 r1 vAmmoCountPos3, %dAmmoCount%
@@ -255,6 +259,7 @@ SetBowPreset() {
 }
 
 SetAllHotbarValues(val) {
+	GuiControl, Text, AmmoCountPos1, %val%
 	GuiControl, Text, AmmoCountPos2, %val%
 	GuiControl, Text, AmmoCountPos3, %val%
 	GuiControl, Text, AmmoCountPos4, %val%
@@ -301,8 +306,15 @@ MacroLoop(ByRef state) {
 	GuiControl,, HoldProgress, 0
 	GuiControl,, RestProgress, 0
 	
+	hotbarPosition := 1
+	
 	continueMacro := True
+	
 	While (continueMacro == True) {
+		currentAction := state.currentAction
+		hold := state.hold
+		rest := state.rest
+		equipTime := state.equipTime
 		hotbarDirty := state.hotbar.dirty
 		if (hotbarDirty == True) {
 			activeHotbars := []
@@ -315,15 +327,45 @@ MacroLoop(ByRef state) {
 			state.hotbar.dirty := False
 		}
 		
-		For k, v in activeHotbars {
-			currentMaxAmmoCount := 0
+		numberOfActiveHotbars := activeHotbars.Length()
+		currentHotbar := activeHotbars[hotbarPosition]
+		currentHotbarState := state.hotbar.slot[currentHotbar]
+		currentAmmoCount := currentHotbarState.ammoCount
+		
+		if (currentAmmoCount <= 0) {
+			ToolTip, Ammo Empty
+			if (hotbarPosition == numberOfActiveHotbars) { ;hotbarPosition needs to be reset on new F12 push
+				state.currentAction := "Stopped"
+				currentAction == "Stopped"
+			} else {
+				currentAction := "StartEquip"
+				hotbarPosition += 1
+				currentHotbar := activeHotbars[hotbarPosition]
+				currentHotbarState := state.hotbar.slot[currentHotbar]
+				currentAmmoCount := currentHotbarState.ammoCount
+			}
 		}
 		
-		currentAction := state.currentAction
-		hold := state.hold
-		rest := state.rest
+		if (currentAction == "StartEquip") {
+			ToolTip, Starting equip new weapon @ pos %currentHotbar%
+			currentAction := "Equipping"
+			windowId := state.GameWindowId
+			ControlSend ,, %currentHotbar%, ahk_id %windowId%
+		} else if (currentAction == "Equipping" AND timer < equipTime) {
+			timer += %MainLoopPeriod%
+		} else if (currentAction == "Equipping" AND timer >= equipTime) {
+			ControlSend ,, 1, ahk_id %windowId%
+			currentAction := "EnteringCombat"
+			timer := 0
+		} else if (currentAction == "EnteringCombat" AND timer < 1000) {
+			timer += %MainLoopPeriod%
+		} else if (currentAction == "EnteringCombat" AND timer >= 1000) {
+			currentAction := "Running"
+			timer := 0
+		}
+		state.currentAction := currentAction
 	
-		if (prevState == "Stopped" AND currentAction == "Running") {
+		if ((prevState == "Stopped" OR prevState == "EnteringCombat") AND currentAction == "Running") {
 			timer := 0
 			GuiControl,, HoldProgress, 0
 			GuiControl,, RestProgress, 0
@@ -338,6 +380,30 @@ MacroLoop(ByRef state) {
 			GuiControl,, HoldProgress, %timer%
 			timer := 0
 			ControlClick,, ahk_id %windowId%,, Left, 1, U
+			currentAmmoCount -= 1
+			state.hotbar.slot[currentHotbar].ammoCount := currentAmmoCount
+			ToolTip % currentHotbar currentAmmoCount
+			if (currentHotbar == 1) {
+				GuiControl, Text, AmmoCountPos1, %currentAmmoCount%
+			} else if (currentHotbar == 2) {
+				GuiControl, Text, AmmoCountPos2, %currentAmmoCount%
+			} else if (currentHotbar == 3) {
+				GuiControl, Text, AmmoCountPos3, %currentAmmoCount%
+			} else if (currentHotbar == 4) {
+				GuiControl, Text, AmmoCountPos4, %currentAmmoCount%
+			} else if (currentHotbar == 5) {
+				GuiControl, Text, AmmoCountPos5, %currentAmmoCount%
+			} else if (currentHotbar == 6) {
+				GuiControl, Text, AmmoCountPos6, %currentAmmoCount%
+			} else if (currentHotbar == 7) {
+				GuiControl, Text, AmmoCountPos7, %currentAmmoCount%
+			} else if (currentHotbar == 8) {
+				GuiControl, Text, AmmoCountPos8, %currentAmmoCount%
+			} else if (currentHotbar == 9) {
+				GuiControl, Text, AmmoCountPos9, %currentAmmoCount%
+			} else if (currentHotbar == 0) {
+				GuiControl, Text, AmmoCountPos0, %currentAmmoCount%
+			}
 			state.currentAction := "Resting"
 			GuiControl,,StatusLabel,Resting
 			currentAction := state.currentAction
@@ -372,14 +438,25 @@ MinimizeGameWindow(ByRef state) {
 }
 
 ToggleHotbarPositionEnabled(ByRef state) {
-	global Slot2, Slot3, Slot4, Slot5, Slot6, Slot7, Slot8, Slot9, Slot0
+	global Slot1, Slot2, Slot3, Slot4, Slot5, Slot6, Slot7, Slot8, Slot9, Slot0
+	global AmmoCountPos1, AmmoCountPos2, AmmoCountPos3, AmmoCountPos4, AmmoCountPos5, AmmoCountPos6, AmmoCountPos7, AmmoCountPos8, AmmoCountPos9, AmmoCountPos0
 	Gui, Submit, NoHide
 	
 	state.hotbar.dirty := True
 	
+	if (Slot1 == 1) {
+		GuiControl, Enable, AmmoCountPos1
+		state.hotbar.slot[1].enabled := True
+		state.hotbar.slot[1].ammoCount := AmmoCountPos1
+	} else {
+		GuiControl, Disable, AmmoCountPos1
+		state.hotbar.slot[1].enabled := False
+	}
+	
 	if (Slot2 == 1) {
 		GuiControl, Enable, AmmoCountPos2
 		state.hotbar.slot[2].enabled := True
+		state.hotbar.slot[2].ammoCount := AmmoCountPos2
 	} else {
 		GuiControl, Disable, AmmoCountPos2
 		state.hotbar.slot[2].enabled := False
@@ -388,6 +465,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot3 == 1) {
 		GuiControl, Enable, AmmoCountPos3
 		state.hotbar.slot[3].enabled := True
+		state.hotbar.slot[3].ammoCount := AmmoCountPos3
 	} else {
 		GuiControl, Disable, AmmoCountPos3
 		state.hotbar.slot[3].enabled := False
@@ -396,6 +474,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot4 == 1) {
 		GuiControl, Enable, AmmoCountPos4
 		state.hotbar.slot[4].enabled := True
+		state.hotbar.slot[4].ammoCount := AmmoCountPos4
 	} else {
 		GuiControl, Disable, AmmoCountPos4
 		state.hotbar.slot[4].enabled := False
@@ -404,6 +483,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot5 == 1) {
 		GuiControl, Enable, AmmoCountPos5
 		state.hotbar.slot[5].enabled := True
+		state.hotbar.slot[5].ammoCount := AmmoCountPos5
 	} else {
 		GuiControl, Disable, AmmoCountPos5
 		state.hotbar.slot[5].enabled := False
@@ -412,6 +492,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot6 == 1) {
 		GuiControl, Enable, AmmoCountPos6
 		state.hotbar.slot[6].enabled := True
+		state.hotbar.slot[6].ammoCount := AmmoCountPos6
 	} else {
 		GuiControl, Disable, AmmoCountPos6
 		state.hotbar.slot[6].enabled := False
@@ -420,6 +501,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot7 == 1) {
 		GuiControl, Enable, AmmoCountPos7
 		state.hotbar.slot[7].enabled := True
+		state.hotbar.slot[7].ammoCount := AmmoCountPos7
 	} else {
 		GuiControl, Disable, AmmoCountPos7
 		state.hotbar.slot[7].enabled := False
@@ -428,6 +510,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot8 == 1) {
 		GuiControl, Enable, AmmoCountPos8
 		state.hotbar.slot[8].enabled := True
+		state.hotbar.slot[8].ammoCount := AmmoCountPos8
 	} else {
 		GuiControl, Disable, AmmoCountPos8
 		state.hotbar.slot[8].enabled := False
@@ -436,6 +519,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot9 == 1) {
 		GuiControl, Enable, AmmoCountPos9
 		state.hotbar.slot[9].enabled := True
+		state.hotbar.slot[9].ammoCount := AmmoCountPos9
 	} else {
 		GuiControl, Disable, AmmoCountPos9
 		state.hotbar.slot[9].enabled := False
@@ -444,6 +528,7 @@ ToggleHotbarPositionEnabled(ByRef state) {
 	if (Slot0 == 1) {
 		GuiControl, Enable, AmmoCountPos0
 		state.hotbar.slot[0].enabled := True
+		state.hotbar.slot[0].ammoCount := AmmoCountPos0
 	} else {
 		GuiControl, Disable, AmmoCountPos0
 		state.hotbar.slot[0].enabled := False
