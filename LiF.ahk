@@ -56,8 +56,8 @@ GuiEscape:
 
 loadDefaults(ByRef defaults) {
 	melee := {}
-	melee.hold := 50
-	melee.rest := 250
+	melee.hold := 500
+	melee.rest := 1500
 	melee.ammoCount := 500
 	defaults.melee := melee
 	
@@ -81,6 +81,8 @@ initState(ByRef state, defaults) {
 	state.ammoCount := defaults.slinger.ammoCount
 	state.currentAction := "Startup"
 	state.equipTime := 4500
+	
+	state.run := {}
 	
 	state.hotbar := {}
 	state.hotbar.dirty := False
@@ -120,6 +122,8 @@ getGameWindow(ByRef state) {
 setGameWindowId(ByRef state) {
 	id := WinExist("A")
 	state.GameWindowId := id
+	Gui, Font
+	GuiControl,,GameId,%id%
 }
 
 SendTabChar(ByRef state) {
@@ -144,10 +148,10 @@ loadGui(ByRef state) {
 	Gui, Add, text, xs+10 ys+20, Window ID:
 	If (gId == 0) {
 		Gui, Font, cDA4F49
-		Gui, Add, text, xs+70 ys+20, Not Found
+		Gui, Add, text, xs+70 ys+20 vGameId, Not Found
 	} else {
 		Gui, Font
-		Gui, Add, text, xs+70 ys+20, %gId%
+		Gui, Add, text, xs+70 ys+20 vGameId, %gId%
 	}
 	Gui, Font
 	
@@ -290,6 +294,7 @@ ToggleLoopStatus(ByRef state) {
 		GuiControl,,StatusLabel,Stopped
 		state.currentAction := "Stopped"
 	} else {
+		Gui, Submit, NoHide
 		state.currentAction := "Running"
 	}
 }
